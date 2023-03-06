@@ -2,8 +2,6 @@ import org.apache.taglibs.standard.extra.spath.ParseException;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
-
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
@@ -21,7 +19,7 @@ public class TimeServlet extends HttpServlet {
     private TemplateEngine engine;
 
     @Override
-    public void init() throws ServletException {
+    public void init() {
         engine = new TemplateEngine();
         ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
         resolver.setPrefix("mytemplates/");
@@ -37,10 +35,12 @@ public class TimeServlet extends HttpServlet {
         String timezone = req.getParameter("timezone");
         String currentTime = "";
         Cookie[] cookies = req.getCookies();
+
         if (timezone == null && cookies == null) {
             timezone = "UTC";
         } else if(timezone == null && cookies != null) {
-            String cookie = cookies[0].getValue();
+            int length = cookies.length;
+            String cookie = cookies[length - 1].getValue();
             TimeZone systemTimezone = TimeZone.getTimeZone(cookie);
             timezone = systemTimezone.getID();
         }
@@ -49,12 +49,12 @@ public class TimeServlet extends HttpServlet {
         } catch (ParseException e) {
             e.printStackTrace();
         }
+        resp.addCookie(new Cookie("timezone" , timezone));
         Context context = new Context(
                 req.getLocale(),
                 Map.of("time", currentTime)
         );
         engine.process("timezone", context, resp.getWriter());
-        resp.setHeader("Set-Cookie", timezone);
         resp.getWriter().close();
     }
 
